@@ -21,6 +21,37 @@ class Route
     public static function dispatch()
     {
         $uri = $_SERVER['REQUEST_URI'];
-        echo $uri;
+        $uri = trim($uri, '/');
+
+        $method = $_SERVER['REQUEST_METHOD'];
+        
+        foreach(self::$routes[$method] as $route => $callback ){
+            if(strpos($route, ':') !== false){
+
+                $route = preg_replace('#:[a-zA-Z]+#', '([a-zA-Z]+)', $route);
+                
+            }
+
+            if(preg_match("#^$route$#", $uri, $matches)){
+                
+                $params = array_slice($matches, 1);
+
+                $response = $callback(...$params);
+
+                if(is_array($response) || is_object($response)){
+
+                    header('Content-type: application/json');
+                    echo json_encode($response);
+
+                }else{
+                    
+                    echo $response;
+                }
+
+                return;
+            }
+        }
+
+        echo '404 not found';
     }
 }
